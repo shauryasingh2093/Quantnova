@@ -1,5 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 
+const API_BASE = import.meta.env.VITE_API_BASE_URL || "";
+
 interface ApiState<T> {
     data: T | null;
     loading: boolean;
@@ -22,7 +24,7 @@ export function useApi<T>(
 
     const fetchData = useCallback(async () => {
         try {
-            const res = await fetch(url);
+            const res = await fetch(`${API_BASE}${url}`);
             if (!res.ok) {
                 const errBody = await res.json().catch(() => ({}));
                 throw new Error(errBody.error || `Request failed (${res.status})`);
@@ -60,7 +62,7 @@ export async function postOrder(body: {
     price?: number;
     stopPrice?: number;
 }) {
-    const res = await fetch("/api/place-order", {
+    const res = await fetch(`${API_BASE}/api/place-order`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(body),

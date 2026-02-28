@@ -5,3 +5,4 @@ rich
 pytest
 flask
 flask-cors
+gunicorn

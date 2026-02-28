@@ -13,7 +13,10 @@ from bot.validators import (
 from bot.logging_config import logger
 
 app = Flask(__name__)
-CORS(app)
+CORS(app, origins=[
+    "http://localhost:5173",
+    "https://*.vercel.app",
+])
 
 # Initialize Binance client once at startup
 try:
