@@ -1,0 +1,7 @@
+python-binance
+python-dotenv
+click
+rich
+pytest
+flask
+flask-cors
