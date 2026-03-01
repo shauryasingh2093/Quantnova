@@ -2,6 +2,7 @@
 Flask REST API Server for Trading Bot Dashboard.
 Bridges the React frontend with the Binance Futures Testnet API.
 """
+import os
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 from bot.client import BinanceFuturesClient
@@ -27,9 +28,29 @@ except Exception as e:
     order_manager = None
 
 
+def _check_client():
+    """Return an error response if the Binance client is not initialized."""
+    if client is None:
+        return jsonify({"error": "Binance client not initialized. Check API keys."}), 503
+    return None
+
+
+@app.route("/api/health", methods=["GET"])
+def health_check():
+    """Health check endpoint for monitoring."""
+    return jsonify({
+        "status": "healthy",
+        "client_initialized": client is not None,
+        "api_key_set": bool(os.getenv("BINANCE_API_KEY")),
+        "api_secret_set": bool(os.getenv("BINANCE_API_SECRET")),
+    })
+
+
 @app.route("/api/account", methods=["GET"])
 def get_account():
     """Get account balances and equity summary."""
+    err = _check_client()
+    if err: return err
     try:
         balances = client.futures_account_balance()
         # Filter to assets with non-zero balance
@@ -55,6 +76,8 @@ def get_account():
 @app.route("/api/orders", methods=["GET"])
 def get_open_orders():
     """Get all open orders, optionally filtered by symbol."""
+    err = _check_client()
+    if err: return err
     try:
         symbol = request.args.get("symbol")
         if symbol:
@@ -84,6 +107,8 @@ def get_open_orders():
 @app.route("/api/trades", methods=["GET"])
 def get_recent_trades():
     """Get recent account trades for a symbol."""
+    err = _check_client()
+    if err: return err
     try:
         symbol = request.args.get("symbol", "BTCUSDT")
         limit = int(request.args.get("limit", 10))
@@ -111,6 +136,8 @@ def get_recent_trades():
 @app.route("/api/ticker/<symbol>", methods=["GET"])
 def get_ticker(symbol):
     """Get live price for a trading pair."""
+    err = _check_client()
+    if err: return err
     try:
         ticker = client.futures_symbol_ticker(symbol=symbol.upper())
         return jsonify({
@@ -125,6 +152,8 @@ def get_ticker(symbol):
 @app.route("/api/tickers", methods=["GET"])
 def get_all_tickers():
     """Get live prices for multiple symbols."""
+    err = _check_client()
+    if err: return err
     try:
         symbols = request.args.get("symbols", "BTCUSDT,ETHUSDT").split(",")
         tickers = []
@@ -143,6 +172,8 @@ def get_all_tickers():
 @app.route("/api/place-order", methods=["POST"])
 def place_order():
     """Place an order via the existing OrderManager."""
+    err = _check_client()
+    if err: return err
     try:
         data = request.get_json()
         if not data:
@@ -198,6 +229,8 @@ def place_order():
 @app.route("/api/positions", methods=["GET"])
 def get_positions():
     """Get current open positions."""
+    err = _check_client()
+    if err: return err
     try:
         positions = client.futures_position_information()
         active = [
@@ -220,5 +253,6 @@ def get_positions():
 
 
 if __name__ == "__main__":
-    logger.info("Starting Trading Bot API Server on port 5001...")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    port = int(os.getenv("PORT", 5001))
+    logger.info(f"Starting Trading Bot API Server on port {port}...")
+    app.run(host="0.0.0.0", port=port, debug=True)
