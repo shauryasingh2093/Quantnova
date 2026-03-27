@@ -180,4 +180,4 @@ cd backend
 python -m pytest mock_test.py -v
 ```
 
-Covers validator logic and mocked order placement for Market & Limit orders.
+Covers validator logic and mocked order placement for Market & Limit orders
